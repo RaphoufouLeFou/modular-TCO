@@ -44,7 +44,7 @@ uint8_t LightSignal::set_signal_lights(uint32_t data)
 
     if (id != id_)
     {
-        // return 1;
+        return 1;
     }
 
     uint8_t status = (data >> 16) & 0xFF;

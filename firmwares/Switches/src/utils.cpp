@@ -9,7 +9,7 @@ uint32_t generateTrueHardwareSeed()
     analogReference(INTERNAL);
     delay(5);
 
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < 32; i++)
     {
         int noiseSample = analogRead(A6);
 

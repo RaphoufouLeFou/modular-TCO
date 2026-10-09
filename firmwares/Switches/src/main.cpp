@@ -23,9 +23,6 @@ int main()
     get_signal1()->init();
     get_signal2()->init();
 
-    pinMode(4, OUTPUT);
-    digitalWrite(4, LOW);
-
     while (1)
     {
         fetch_serial();
