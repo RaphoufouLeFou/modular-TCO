@@ -38,10 +38,10 @@ void Motor::Update()
     servo.write(current_position_);
 }
 
-StatusType Motor::order_movement(InfoType destination_state)
+StatusType Motor::order_movement(OrderType destination_state)
 {
-    if (destination_state != InfoType::PLUS
-        && destination_state != InfoType::MINUS)
+    if (destination_state != OrderType::MOVE_PLUS
+        && destination_state != OrderType::MOVE_MINUS)
     {
         return StatusType::UNKNOWN_COMMAND_ERROR;
     }
@@ -51,12 +51,18 @@ StatusType Motor::order_movement(InfoType destination_state)
         return StatusType::INVALID_ERROR;
     }
 
-    if (destination_state == current_status_)
+    InfoType dest = InfoType::PLUS;
+    if (destination_state == OrderType::MOVE_MINUS)
+    {
+        dest = InfoType::MINUS;
+    }
+
+    if (dest == current_status_)
     {
         return StatusType::IDLE;
     }
 
-    target_status_ = destination_state;
+    target_status_ = dest;
     return StatusType::OK;
 }
 
@@ -76,11 +82,24 @@ int Motor::set_bounds(uint8_t min, uint8_t max)
     return 0;
 }
 
-int Motor::set_speed(uint16_t speed)
+StatusType Motor::set_bounds(uint32_t bounds)
+{
+    uint8_t min, max;
+    min = (bounds >> 0) & 0xFF;
+    max = (bounds >> 8) & 0xFF;
+    int res = set_bounds(min, max);
+    if (res)
+    {
+        return StatusType::INVALID_ERROR;
+    }
+    return StatusType::OK;
+}
+
+StatusType Motor::set_speed(uint32_t speed)
 {
     if (speed == 0)
-        return 1;
+        return StatusType::INVALID_ERROR;
 
     speed_ = speed;
-    return 0;
+    return StatusType::OK;
 }

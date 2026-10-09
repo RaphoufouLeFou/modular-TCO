@@ -4,6 +4,9 @@
 #include "light_signal.hpp"
 #include "motor.hpp"
 #include "packets.hpp"
+#include "packets_handler.hpp"
+
+uint8_t id_ = UINT8_ERROR;
 
 int main()
 {
@@ -13,17 +16,26 @@ int main()
 
     Serial.println("Hello world!");
 
-    Motor motor(2);
-    LightSignal signal0(18, 17, 16, 15, 14);
-    LightSignal signal1(5, 6, 3, 19);
-    LightSignal signal2(10, 8, 9, 7);
+    uint32_t last_time = millis();
 
-    motor.order_movement(InfoType::MINUS);
+    get_motor()->init(2);
+    get_signal0()->init();
+    get_signal1()->init();
+    get_signal2()->init();
+
+    pinMode(4, OUTPUT);
+    digitalWrite(4, LOW);
 
     while (1)
     {
-        motor.Update();
-        delay(TICK_DURATION_MS);
+        fetch_serial();
+
+        uint32_t current_time = millis();
+        if (current_time - last_time >= TICK_DURATION_MS)
+        {
+            get_motor()->Update();
+            last_time = current_time;
+        }
     }
 
     return 0;

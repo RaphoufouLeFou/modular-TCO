@@ -15,15 +15,16 @@
 class Motor
 {
 public:
-    Motor(int pin, uint8_t min = DEFAULT_MIN, uint8_t max = DEFAULT_MAX,
-          uint8_t speed = DEFAULT_SPEED)
+    Motor() = default;
+    void init(int pin, uint8_t min = DEFAULT_MIN, uint8_t max = DEFAULT_MAX,
+              uint8_t speed = DEFAULT_SPEED)
     {
         if (set_bounds(min, max))
         {
             set_bounds(DEFAULT_MIN, DEFAULT_MAX);
         }
 
-        if (set_speed(speed))
+        if (set_speed(speed) != StatusType::OK)
         {
             set_speed(DEFAULT_SPEED);
         }
@@ -58,7 +59,7 @@ public:
      *  @retval INVALID_ERROR = The motor is already moving.
      *  @retval UNKNOWN_COMMAND_ERROR = Invalid input argument
      */
-    StatusType order_movement(InfoType destination_state);
+    StatusType order_movement(OrderType destination_state);
 
     /**
      *  @brief Get the motor current status
@@ -80,13 +81,22 @@ public:
     int set_bounds(uint8_t min, uint8_t max);
 
     /**
+     *  @brief Set the motor start and end of movement values
+     *  @param bounds mask of 0x0000AABB, A beeing max, and B the min
+     *  @return
+     *  @retval OK = ok
+     *  @retval INVALID_ERROR = invalid speed
+     */
+    StatusType set_bounds(uint32_t bounds);
+
+    /**
      *  @brief Set the motor speed in degree per ticks
      *  @param speed the speed in degree per ticks
      *  @return
-     *  @retval 0 = ok
-     *  @retval 1 = invalid speed
+     *  @retval OK = ok
+     *  @retval INVALID_ERROR = invalid speed
      */
-    int set_speed(uint16_t speed);
+    StatusType set_speed(uint32_t speed);
 
 private:
     InfoType current_status_;
