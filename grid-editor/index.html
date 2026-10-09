@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grid Editor</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <header id="topbar" class="topbar"></header>
+    <div class="app-body">
+      <aside id="sidebar" class="sidebar" aria-label="Items disponibles"></aside>
+      <main class="main">
+        <section id="workspace" class="workspace"></section>
+        <footer id="bottombar" class="bottombar"></footer>
+      </main>
+    </div>
+  </div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <!-- 1. CONFIGURATION : liste des items (id, nom, image) + réglages -->
+  <script src="js/config.js"></script>
+
+  <!-- 2. NOYAU : ne pas retirer -->
+  <script src="js/core/app.js"></script>
+  <script src="js/core/model.js"></script>
+  <script src="js/core/ui.js"></script>
+  <script src="js/core/dnd.js"></script>
+  <script src="js/core/keyboard.js"></script>
+
+  <!-- 3. INTERFACE : zones de l'écran (remplies par les registres) -->
+  <script src="js/ui/topbar.js"></script>
+  <script src="js/ui/sidebar.js"></script>
+  <script src="js/ui/workspace.js"></script>
+  <script src="js/ui/bottombar.js"></script>
+
+  <!-- 4. FEATURES : retirez une ligne pour désactiver la feature -->
+  <script src="js/features/menus.js"></script>
+  <script src="js/features/autosave.js"></script>
+  <script src="js/features/history.js"></script>
+  <script src="js/features/file-io.js"></script>
+  <script src="js/features/grid-size.js"></script>
+  <script src="js/features/view.js"></script>
+  <script src="js/features/item-actions.js"></script>
+  <script src="js/features/palette-tab.js"></script>
+  <script src="js/features/scene-tab.js"></script>
+  <script src="js/features/help.js"></script>
+
+  <!-- 5. DÉMARRAGE -->
+  <script src="js/main.js"></script>
+</body>
+</html>
