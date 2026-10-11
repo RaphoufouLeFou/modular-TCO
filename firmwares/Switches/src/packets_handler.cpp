@@ -42,7 +42,7 @@ void handle_discovery(PacketHeader header, uint8_t *packet_buffer,
         UUID = generateTrueHardwareSeed();
     }
 
-    return_packet(IdentificationPacket{ UUID });
+    return_packet(IdentificationPacket{ UUID, DeviceType::SWITCH });
 }
 
 void handle_assignment(PacketHeader header, uint8_t *packet_buffer,
