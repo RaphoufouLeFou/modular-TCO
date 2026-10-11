@@ -1,7 +1,4 @@
-#include "files.h"
-
-#include <stdio.h>
-#include <string.h>
+#include "files.hpp"
 
 #include "esp_log.h"
 #include "esp_spiffs.h"
@@ -42,9 +39,4 @@ void init_files(void)
     {
         ESP_LOGI(TAG, "SPIFFS : free: %zu bytes, used: %zu bytes", total, used);
     }
-}
-
-char *get_file(const char *name, int *outsize)
-{
-    return NULL;
 }

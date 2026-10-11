@@ -1,4 +1,6 @@
-#include "server.h"
+#include "server.hpp"
+
+#include <cstdint>
 
 #include "config.h"
 #include "esp_http_server.h"
@@ -203,16 +205,16 @@ void wifi_init_softap()
     esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID,
                                         &wifi_event_handler, NULL, NULL);
 
-    wifi_config_t wifi_config = {
-                                .ap = {
-                                    .ssid = ESP_WIFI_SSID,
-                                    .ssid_len = strlen(ESP_WIFI_SSID),
-                                    .channel = ESP_WIFI_CHANNEL,
-                                    .password = ESP_WIFI_PASS,
-                                    .max_connection = MAX_STA_CONN,
-                                    .authmode = WIFI_AUTH_WPA2_PSK,
-                                },
-                            };
+    wifi_config_t wifi_config = {};
+
+    strlcpy((char *)wifi_config.ap.ssid, ESP_WIFI_SSID,
+            sizeof(wifi_config.ap.ssid));
+    strlcpy((char *)wifi_config.ap.password, ESP_WIFI_PASS,
+            sizeof(wifi_config.ap.password));
+    wifi_config.ap.ssid_len = (uint8_t)strlen(ESP_WIFI_SSID);
+    wifi_config.ap.channel = ESP_WIFI_CHANNEL;
+    wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
+    wifi_config.ap.max_connection = MAX_STA_CONN;
 
     esp_wifi_set_mode(WIFI_MODE_AP);
     esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
@@ -222,7 +224,7 @@ void wifi_init_softap()
              ESP_WIFI_SSID, ESP_WIFI_PASS, ESP_WIFI_CHANNEL);
 }
 
-void start_server(void)
+void Server::start_server()
 {
     wifi_init_softap();
 
@@ -239,7 +241,8 @@ void start_server(void)
         return;
     }
 
-    server_data = calloc(1, sizeof(struct file_server_data));
+    server_data =
+        (struct file_server_data *)calloc(1, sizeof(struct file_server_data));
     if (!server_data)
     {
         ESP_LOGE(TAG, "Failed to allocate server data");
