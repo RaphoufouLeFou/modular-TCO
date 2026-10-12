@@ -1,6 +1,7 @@
 #include "packets_handler.hpp"
 
 #include <stdint.h>
+#include <string.h>
 
 #include "config.hpp"
 #include "light_signal.hpp"
@@ -34,10 +35,22 @@ LightSignal *get_signal2()
     return &signal2;
 }
 
+template <typename T>
+static bool read_payload(const uint8_t *buf, uint8_t len, T &out)
+{
+    if (len < sizeof(T))
+    {
+        return false;
+    }
+    memcpy(&out, buf, sizeof(T));
+    return true;
+}
+
 void handle_discovery(PacketHeader header, uint8_t *packet_buffer,
                       uint8_t buffer_size)
 {
-    if (UUID == 0)
+    // 0 is used as "no UUID yet", so never keep 0 as a real UUID
+    while (UUID == 0)
     {
         UUID = generateTrueHardwareSeed();
     }
@@ -48,14 +61,12 @@ void handle_discovery(PacketHeader header, uint8_t *packet_buffer,
 void handle_assignment(PacketHeader header, uint8_t *packet_buffer,
                        uint8_t buffer_size)
 {
-    if (buffer_size < sizeof(AssignmentPacket))
+    AssignmentPacket p;
+    if (!read_payload(packet_buffer, buffer_size, p))
     {
         return_packet(StatusPacket{ StatusType::ERROR });
         return;
     }
-
-    AssignmentPacket p;
-    p = *(AssignmentPacket *)packet_buffer;
 
     if (p.UUID != UUID)
     {
@@ -83,14 +94,12 @@ void handle_heartbeat(PacketHeader header, uint8_t *packet_buffer,
 void handle_order(PacketHeader header, uint8_t *packet_buffer,
                   uint8_t buffer_size)
 {
-    if (buffer_size < sizeof(OrderPacket))
+    OrderPacket p;
+    if (!read_payload(packet_buffer, buffer_size, p))
     {
         return_packet(StatusPacket{ StatusType::ERROR });
         return;
     }
-
-    OrderPacket p;
-    p = *(OrderPacket *)packet_buffer;
 
     switch (p.Order)
     {
@@ -104,36 +113,41 @@ void handle_order(PacketHeader header, uint8_t *packet_buffer,
     case OrderType::SET_MOTOR_SPEED:
         return_packet(StatusPacket{ motor.set_speed(p.OrderValue) });
         return;
-    case OrderType::SET_LIGHT_BRIGHTNESS:
-        break;
     case OrderType::CHANGE_LIGHT:
         signal0.set_signal_lights(p.OrderValue);
         signal1.set_signal_lights(p.OrderValue);
         signal2.set_signal_lights(p.OrderValue);
-        break;
-    case OrderType::SET_POWER_LEVEL:
-        return_packet(StatusPacket{ StatusType::UNKNOWN_COMMAND_ERROR });
+        return_packet(StatusPacket{ StatusType::OK });
         return;
+    case OrderType::SET_LIGHT_BRIGHTNESS: // not implemented yet
+    case OrderType::SET_POWER_LEVEL: // power modules only
     default:
         return_packet(StatusPacket{ StatusType::UNKNOWN_COMMAND_ERROR });
         return;
     }
-    return_packet(StatusPacket{ StatusType::OK });
 }
 
 void handle_fetch(PacketHeader header, uint8_t *packet_buffer,
                   uint8_t buffer_size)
 {
-    if (buffer_size < sizeof(FetchPacket))
+    FetchPacket p;
+    if (!read_payload(packet_buffer, buffer_size, p))
     {
-        return_packet(StatusPacket{ StatusType::ERROR });
+        return_packet(InfoPacket{ InfoType::ERROR, 0 });
         return;
     }
 
-    FetchPacket p;
-    p = *(FetchPacket *)packet_buffer;
-
-    return_packet(InfoPacket{ motor.get_state() });
+    switch (p.Fetch)
+    {
+    case FetchType::RAIL_SWITCH_STATUS:
+        return_packet(InfoPacket{ motor.get_state(), 0 });
+        return;
+    case FetchType::POWER_DETECTOR:
+    case FetchType::INFARED_DETECTOR:
+    default:
+        return_packet(InfoPacket{ InfoType::ERROR, 0 });
+        return;
+    }
 }
 
 void handle_board(PacketHeader header, uint8_t *packet_buffer,
@@ -144,46 +158,39 @@ void handle_board(PacketHeader header, uint8_t *packet_buffer,
 
 void fetch_serial()
 {
-    uint8_t buffer[PACKET_BUFFER_SIZE];
-    PacketHeader res_header;
+    static uint8_t buffer[PACKET_BUFFER_SIZE];
+    PacketHeader header;
 
-    uint8_t read = fetch_packet(buffer, PACKET_BUFFER_SIZE, res_header);
+    const uint8_t read = fetch_packet(buffer, PACKET_BUFFER_SIZE, header);
     if (read == UINT8_ERROR)
     {
         return;
     }
 
-    // check the checksum
-    const uint8_t received = res_header.checksum;
-    res_header.checksum = 0;
-    uint8_t crc = Packet::Crc8((uint8_t *)(&res_header), sizeof(PacketHeader));
-    crc = Packet::Crc8(buffer, read, crc);
-
-    if (crc != received)
-    {
-        return_packet(StatusPacket{ StatusType::CHECKSUM_ERROR });
-        return;
-    }
-
-    switch (res_header.type)
+    switch (header.type)
     {
     case PacketType::DISCOVERY:
-        handle_discovery(res_header, buffer, PACKET_BUFFER_SIZE);
+        handle_discovery(header, buffer, read);
         break;
     case PacketType::ASSIGNMENT:
-        handle_assignment(res_header, buffer, PACKET_BUFFER_SIZE);
+        handle_assignment(header, buffer, read);
         break;
     case PacketType::HEARTBEAT:
-        handle_heartbeat(res_header, buffer, PACKET_BUFFER_SIZE);
+        handle_heartbeat(header, buffer, read);
         break;
     case PacketType::ORDER:
-        handle_order(res_header, buffer, PACKET_BUFFER_SIZE);
+        handle_order(header, buffer, read);
         break;
     case PacketType::FETCH:
-        handle_fetch(res_header, buffer, PACKET_BUFFER_SIZE);
+        handle_fetch(header, buffer, read);
         break;
     case PacketType::BOARD:
-        handle_board(res_header, buffer, PACKET_BUFFER_SIZE);
+        handle_board(header, buffer, read);
+        break;
+    case PacketType::IDENTIFICATION:
+    case PacketType::STATUS:
+    case PacketType::INFO:
+        // Responses are meant for the controller: never answer them
         break;
     default:
         return_packet(StatusPacket{ StatusType::UNKNOWN_COMMAND_ERROR });

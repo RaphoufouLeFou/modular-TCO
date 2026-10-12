@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <string.h>
 
+static constexpr uint8_t PACKET_SYNC = 0xAA;
+
 enum class DeviceType : uint8_t
 {
     NONE = 0,
@@ -49,9 +51,9 @@ enum class OrderType : uint8_t
     CHANGE_LIGHT, // request a light change. For this one, the packet value
                   // is first 8 bits, signal ID next 8 bits, all lights
                   // status final 16 bits : unused
-    SET_POWER_LEVEL, // Set the power value of a power module
-                     // first 16 bits : unused
-                     // last 16 bits : power value
+    SET_POWER_LEVEL // Set the power value of a power module
+                    // first 16 bits : unused
+                    // last 16 bits : power value
 };
 
 enum class FetchType : uint8_t
@@ -76,6 +78,7 @@ enum class InfoType : uint8_t
     MOVING, // Rail switch is moving
     HAVE_TRAIN, // The detector is detecting a train
     NO_TRAIN, // The detector is not detecting a train
+    ERROR,
 };
 
 enum class StatusType : uint8_t

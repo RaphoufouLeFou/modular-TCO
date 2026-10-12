@@ -4,7 +4,8 @@
 #define MAX_BOARD_SIZE 16
 
 #define PACKET_BUFFER_SIZE 64
-#define PACKET_TIMEOUT_MS 128
+#define PACKET_TIMEOUT_MS 200
+#define UART_BUFFER_SIZE 512
 
 #define I2C_MASTER_NUM I2C_NUM_0
 #define I2C_MASTER_FREQ_HZ 100000
@@ -41,8 +42,8 @@
 
 #define FILE_PATH_MAX (ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN)
 
-#define PORTS_COUNT 12
-#define TCO_COUNT 2
-#define IS_TCO(p) (p > PORTS_COUNT)
+#define PORTS_COUNT 1
+#define TCO_COUNT 0
+#define IS_TCO(p) ((p) > PORTS_COUNT)
 
 #endif // _CONFIG_H_

@@ -33,19 +33,20 @@ void handle_board(PacketHeader header, uint8_t *packet_buffer,
                   uint8_t buffer_size);
 
 template <typename T>
-void return_packet(T packet)
+void return_packet(const T &packet)
 {
-    uint8_t buffer[PACKET_BUFFER_SIZE];
-
-    constexpr uint8_t len = sizeof(T) + sizeof(PacketHeader);
+    constexpr uint8_t len = sizeof(PacketHeader) + sizeof(T);
+    static_assert(len <= PACKET_BUFFER_SIZE, "packet too big");
+    uint8_t buffer[len];
 
     PacketHeader h;
-    h.type = packet.Type;
+    h.type = T::Type;
     h.size = sizeof(T);
     h.ID = id_;
+    h.checksum = 0;
 
     memcpy(buffer, &h, sizeof(PacketHeader));
-    memcpy(buffer + sizeof(PacketHeader), &packet, len);
+    memcpy(buffer + sizeof(PacketHeader), &packet, sizeof(T));
 
     buffer[offsetof(PacketHeader, checksum)] = Packet::Crc8(buffer, len);
     send_packet(buffer, len);

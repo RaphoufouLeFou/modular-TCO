@@ -13,8 +13,10 @@ int main()
     init();
 
     Serial.begin(9600);
+    Serial.setTimeout(20);
 
-    Serial.println("Hello world!");
+    delay(200);
+    // Serial.println("Hello world!");
 
     uint32_t last_time = millis();
 

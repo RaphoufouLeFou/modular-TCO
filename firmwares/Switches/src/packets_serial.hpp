@@ -6,6 +6,8 @@
 
 #include "packets.hpp"
 
+void serialFlush();
+
 // returns the read size. UINT8_ERROR if no packet recived
 
 uint8_t fetch_packet(uint8_t *packet_buffer, uint8_t buffer_size,

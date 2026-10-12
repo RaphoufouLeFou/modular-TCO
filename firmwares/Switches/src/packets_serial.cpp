@@ -4,35 +4,48 @@
 #include "config.hpp"
 #include "packets.hpp"
 
-void serialFlush()
-{
-    while (Serial.available() > 0)
-    {
-        char t = Serial.read();
-    }
-}
-
 uint8_t fetch_packet(uint8_t *packet_buffer, uint8_t buffer_size,
                      PacketHeader &res_header)
 {
-    int waiting_bytes = Serial.available();
-    if (waiting_bytes <= 0)
+    while (Serial.available() > 0 && Serial.peek() != PACKET_SYNC)
+    {
+        Serial.read();
+    }
+
+    if (Serial.available() < (int)(1 + sizeof(PacketHeader)))
+    {
+        return UINT8_ERROR;
+    }
+    Serial.read(); // consume the sync byte
+
+    if (Serial.readBytes((uint8_t *)&res_header, sizeof(PacketHeader))
+        != sizeof(PacketHeader))
     {
         return UINT8_ERROR;
     }
 
-    size_t byte_read =
-        Serial.readBytes((uint8_t *)&res_header, sizeof(PacketHeader));
-
-    if (buffer_size < res_header.size || byte_read < sizeof(PacketHeader))
+    if (res_header.size > buffer_size)
     {
-        serialFlush();
         return UINT8_ERROR;
     }
 
-    byte_read = Serial.readBytes(packet_buffer, res_header.size);
+    if (res_header.size > 0
+        && Serial.readBytes(packet_buffer, res_header.size) != res_header.size)
+    {
+        return UINT8_ERROR;
+    }
 
-    serialFlush();
+    const uint8_t received = res_header.checksum;
+    res_header.checksum = 0;
+    uint8_t crc =
+        Packet::Crc8((const uint8_t *)&res_header, sizeof(PacketHeader));
+    crc = Packet::Crc8(packet_buffer, res_header.size, crc);
+    res_header.checksum = received;
+
+    if (crc != received)
+    {
+        return UINT8_ERROR;
+    }
 
     if (res_header.ID != id_ && res_header.type != PacketType::DISCOVERY
         && res_header.type != PacketType::ASSIGNMENT)
@@ -40,11 +53,12 @@ uint8_t fetch_packet(uint8_t *packet_buffer, uint8_t buffer_size,
         return UINT8_ERROR;
     }
 
-    return byte_read;
+    return res_header.size;
 }
 
 void send_packet(uint8_t *packet, uint8_t packet_size)
 {
+    Serial.write(PACKET_SYNC);
     Serial.write(packet, packet_size);
     Serial.flush();
 }
